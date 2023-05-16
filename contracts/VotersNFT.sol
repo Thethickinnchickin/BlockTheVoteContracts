@@ -34,6 +34,31 @@ contract VotersNFT is ERC721Enumerable, Ownable {
     // timestamp for when presale would end
     uint256 public presaleEnded;
 
+        // Function to convert a uint256 to a string
+    function toString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+
+        uint256 temp = value;
+        uint256 digits;
+
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+
+        bytes memory buffer = new bytes(digits);
+
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + (value % 10)));
+            value /= 10;
+        }
+
+        return string(buffer);
+    }
+
     modifier onlyWhenNotPaused {
         require(!_paused, "Contract currently paused");
         _;
@@ -44,7 +69,7 @@ contract VotersNFT is ERC721Enumerable, Ownable {
       * Constructor for Crypto Devs takes in the baseURI to set _baseTokenURI for the collection.
       * It also initializes an instance of whitelist interface.
       */
-    constructor (string memory baseURI, address votinglistContract) ERC721("Block Voter", "BV") {
+    constructor (string memory baseURI, address votinglistContract) ERC721("Voting Pass", "VP") {
         _baseTokenURI = baseURI;
         votinglist = IVotingList(votinglistContract);
     }
@@ -73,10 +98,9 @@ contract VotersNFT is ERC721Enumerable, Ownable {
         require(presaleStarted && block.timestamp < presaleEnded, "Presale is not running");
         require(votinglist.votingAddresses(msg.sender), "You are not whitelisted");
         require(tokenIds < maxTokenIds, "Exceeded maximum Block Voting supply");
-        if (tokenIds > 0) {
-          require(getSenderBalance() > 2, "You cannot have more than one Voters NFT");
+        require(getSenderBalance() < 1, toString(getSenderBalance()));
 
-        }
+        
         require(msg.value >= _price, "Ether sent is not correct");
         tokenIds += 1;
 
@@ -92,7 +116,7 @@ contract VotersNFT is ERC721Enumerable, Ownable {
     function mint() public payable onlyWhenNotPaused {
         require(presaleStarted && block.timestamp >=  presaleEnded, "Presale has not ended yet");
         require(tokenIds < maxTokenIds, "Exceed maximum Block Voting supply");
-        require(getSenderBalance() > 0, "You cannot have more than one Voters NFT");
+        require(getSenderBalance() < 1, "You cannot have more than one Voters NFT");
         require(msg.value >= _price, "Ether sent is not correct");
         tokenIds += 1;
         _safeMint(msg.sender, tokenIds);
